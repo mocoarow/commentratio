@@ -34,11 +34,13 @@
 
 中身のあるコメントを含む行数。以下は数えない。
 
-- 中身のない `//` 行（段落区切り）、および複数行の `/* */` の中の空行
+- 中身のない `//` 行（段落区切り）、および複数行の `/* */` の中の空行と、装飾用の `*` だけの行
 - ディレクティブ: `//go:`、`//nolint`、`//lint:`、`//line ` で始まるコメント
 - `file` の計算でのみ: package 句より前にあり GoDoc として付いていないコメント（ライセンスヘッダー）と、パッケージの GoDoc。`doc.go` が常に「多すぎ」になるのを防ぐため
 
 行末コメント（`x := 1 // note`）のある行は、コード行とコメント行の両方に数える。
+
+複数行の raw string は、中の空行も含めてすべてコード行に数える。
 
 ### 対象外のファイル
 
@@ -65,6 +67,7 @@ code_lines >= require-from かつ 識別子が公開されている かつ GoDoc
 ```
 
 - `require-from` が 0 のときはチェックしない
+- 数えるべき GoDoc の行が 0 行なら「GoDoc なし」とみなす。ディレクティブ（`//nolint` など）だけが付いている場合も GoDoc なし
 - 公開の判定は `ast.IsExported`（識別子名）で行う。メソッドはメソッド名で判定する
 - `decl-doc` では、`GenDecl` と spec のどちらかに GoDoc があれば「GoDoc あり」とみなす。spec 内に公開識別子が 1 つでもあれば公開とみなす
 
@@ -150,7 +153,9 @@ comments in body of ParseUser are too many: 6 comment lines for 12 code lines (m
 file comments are too many: 40 comment lines for 100 code lines (max 30)
 ```
 
-`func-body` の位置は本体内で最初のコメントの位置、`file` の位置はファイル先頭とする。
+`func-body` の位置は本体内で最初のコメントの位置、`file` の位置は `package` キーワードの位置とする（1 行目がライセンスヘッダーでも `//nolint` を置けるように）。
+
+メッセージ中の名前は、関数は `F`、メソッドは `T.M`（ポインタと型パラメータを除いた受信者型名）、まとめた宣言は最初の spec の最初の識別子名とする。
 
 個別の抑制は golangci-lint の `//nolint:commentratio` を使う。単体コマンド用の独自の抑制コメントは作らない。
 
@@ -159,9 +164,11 @@ file comments are too many: 40 comment lines for 100 code lines (max 30)
 ```
 github.com/mocoarow/commentratio
 ├── analyzer.go            # NewAnalyzer(Settings) (*analysis.Analyzer, error)。ファイルごとの処理の流れ
-├── settings.go            # Settings / Rule / DefaultSettings() / Validate() / ErrInvalidSettings
-├── check.go               # 上限・GoDoc 必須の判定と、4 つの対象ごとのチェック
+├── settings.go            # Settings / Rule / DocRule / DefaultSettings() / Validate() / DecodeSettings() / ErrInvalidSettings
+├── check.go               # 4 つの対象ごとのチェック
+├── flags.go               # 単体コマンド用のフラグ登録
 ├── internal/linecount/    # 行の分類と範囲の行数カウント
+├── internal/judge/        # 上限・GoDoc 必須の判定（副作用のない関数のみ）
 ├── plugin/                # golangci-lint module plugin
 └── cmd/commentratio/      # 単体コマンド（singlechecker）
 ```
