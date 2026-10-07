@@ -155,32 +155,7 @@ func CommentLineFlags(lit string) []bool // コメントトークンの各行を
 
 ### (c) internal/judge
 
-作成するファイル: `internal/judge/doc.go`、`judge.go`、`judge_test.go`
-
-```go
-type Limits struct {
-    FreeLines int
-    MaxLines  int
-    MaxRatio  float64
-}
-
-const ratioEpsilon = 1e-9
-
-func Limit(code int, l Limits) int // min(MaxLines, max(FreeLines, int(math.Floor(float64(code)*MaxRatio + ratioEpsilon))))
-func TooMany(comment, code int, l Limits) bool
-func RequiresDoc(code, requireFrom int, exported, hasDoc bool) bool // requireFrom > 0 && code >= requireFrom && exported && !hasDoc
-```
-
-先に書くテスト:
-
-- `Test_Limit_shouldReturnSpecExample_whenCodeLinesVary`: テーブル。3→3、10→3、20→4、50→10、100→15（デフォルトの func-doc）
-- `Test_Limit_shouldReturnFreeLines_whenCodeIsZero`
-- `Test_Limit_shouldReturnFreeLines_whenRatioIsZero`
-- `Test_Limit_shouldNotUnderflow_whenProductIsInexact`: 100×0.29 → 29
-- `Test_TooMany_shouldReturnFalse_whenCommentEqualsLimit`: テーブル。free で決まる（code 10, comment 3）、ratio で決まる（code 20, comment 4）、max で決まる（code 100, comment 15）
-- `Test_TooMany_shouldReturnTrue_whenCommentExceedsLimitByOne`: 上の 3 ケースで comment 4 / 5 / 16
-- `Test_RequiresDoc_shouldReturnTrue_whenCodeEqualsRequireFrom`: 10 / 10
-- `Test_RequiresDoc_shouldReturnFalse_whenNotRequired`: テーブル。code 9 / 10、requireFrom 0、非公開、doc あり
+実装済み。挙動は `internal/judge/judge_test.go` を参照。
 
 ---
 
