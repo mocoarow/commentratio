@@ -46,110 +46,13 @@
 
 ### (a) go.mod と設定
 
-作成するファイル: `go.mod`、`doc.go`、`settings.go`、`settings_test.go`
-
-- `go mod init github.com/mocoarow/commentratio`。依存は `golang.org/x/tools`、`github.com/golangci/plugin-module-register`、`github.com/stretchr/testify`
-- go 行は `go mod init` が出力したものをそのまま使う（plugin 利用者に最新の Go を強制しないため）
-
-```go
-type Rule struct {
-    Enabled   bool    `json:"enabled"`
-    FreeLines int     `json:"free-lines"`
-    MaxRatio  float64 `json:"max-ratio"`
-    MaxLines  int     `json:"max-lines"`
-}
-
-type DocRule struct {
-    Rule
-    RequireFrom int `json:"require-from"`
-}
-
-type Settings struct {
-    FuncDoc  DocRule `json:"func-doc"`
-    DeclDoc  DocRule `json:"decl-doc"`
-    FuncBody Rule    `json:"func-body"`
-    File     Rule    `json:"file"`
-}
-
-var ErrInvalidSettings = errors.New("invalid settings")
-
-func DefaultSettings() Settings
-func (s Settings) Validate() error // fmt.Errorf("%w: func-doc.free-lines must be >= 0, got %d", ErrInvalidSettings, v)
-func DecodeSettings(raw any) (Settings, error)
-```
-
-`DecodeSettings` の手順:
-
-1. `json.Marshal(raw)` で JSON にする
-2. `DefaultSettings()` で初期化した値に、`DisallowUnknownFields()` を付けた `json.Decoder` でデコードする。値型のネスト構造体なので、データにあるキーだけが上書きされ、省略したキーはデフォルト値（`enabled: true` を含む）のまま残る
-3. `Validate` を呼ぶ
-
-デコードエラー（未知のキー、型の不一致）は `ErrInvalidSettings` でラップする。`func-body` と `file` の `require-from` は `Rule` にフィールドがないので、未知のキーとしてエラーになる。
-
-`Validate` は `enabled: false` の Rule にも適用する。
-
-先に書くテスト:
-
-- `Test_DefaultSettings_shouldReturnDefaults_whenCalled`: 仕様の表の全値と `Enabled` を固定する
-- `Test_Settings_Validate_shouldReturnNil_whenSettingsAreValid`: テーブル。デフォルト値、すべて 0、`free-lines == max-lines`、`max-ratio = 0`
-- `Test_Settings_Validate_shouldReturnErrInvalidSettings_whenValueIsInvalid`: テーブル。4 対象それぞれで free / max / require が負、ratio が負・NaN・+Inf、free > max
-- `Test_DecodeSettings_shouldReturnDefaults_whenRawIsNil`
-- `Test_DecodeSettings_shouldKeepDefaults_whenKeyIsOmitted`: `func-doc.max-ratio` だけ指定し、他の値と `enabled=true` が残る
-- `Test_DecodeSettings_shouldDisableRule_whenEnabledIsFalse`
-- `Test_DecodeSettings_shouldApplyValue_whenKeyIsSet`: デフォルトと異なる値（例: 7, 0.45）で確認する
-- `Test_DecodeSettings_shouldReturnErrInvalidSettings_whenRequireFromIsSetOnNonDocRule`: テーブル `{func-body, file}`
-- `Test_DecodeSettings_shouldReturnErrInvalidSettings_whenKeyIsUnknown`
-- `Test_DecodeSettings_shouldReturnErrInvalidSettings_whenTypeMismatches`
-- `Test_DecodeSettings_shouldReturnErrInvalidSettings_whenValueIsOutOfRange`
+実装済み。挙動は `settings_test.go` を参照。
 
 ---
 
 ### (b) internal/linecount
 
-作成するファイル: `internal/linecount/doc.go`、`linecount.go`、`linecount_test.go`
-
-```go
-var ErrScan = errors.New("scan source")
-
-type Lines struct{ code, comment []int } // 行ごとの値の累積和。len = 行数+1、1 始まり
-
-func Classify(filename string, src []byte) (Lines, error)
-func (l Lines) Code(from, to int) int    // 閉区間。範囲外は丸め、from > to なら 0
-func (l Lines) Comment(from, to int) int
-func (l Lines) LineCount() int
-func IsDirective(text string) bool
-func CommentLineFlags(lit string) []bool // コメントトークンの各行を「数えるか」
-```
-
-分類のルール:
-
-- 自前の `token.NewFileSet()` と `scanner.ScanComments` で 1 回だけ走査する（共有の `pass.Fset` は書き換えない）。エラーハンドラでエラーを数え、1 件以上なら `ErrScan` を返す
-- 自動挿入のセミコロン（`SEMICOLON` で lit が `"\n"`）は無視する
-- その他のトークンは、開始行から `開始行 + strings.Count(lit, "\n")` までをコード行にする。複数行 raw string は空行も含めて全行コード行。raw string は `\r` が除かれるので、行数をバイト長から計算しない
-- `//` コメント:
-  - `\r` を除いたうえで `IsDirective` に当たれば数えない。対象は `//go:`、`//nolint`、`//lint:`、`//line ` の前方一致で、`//` の直後にスペースがない形に限る
-  - `//` を除いて TrimSpace した結果が空なら数えない
-  - 行末コメントでもその行のコメントフラグを立てる。コードフラグとは独立
-- `/* */` コメント:
-  - `\n` で分割し、先頭要素から `/*`、末尾要素から `*/` を除く
-  - 各要素を TrimSpace し、先頭の装飾用 `*` を 1 個除く
-  - 結果が空でない行だけ数える。`/* */` や `/**/` は数えない
-- 行ごとに真偽値で記録するので、同じ行に複数トークンがあっても重複しない
-
-先に書くテスト:
-
-- `Test_Classify_shouldCountCodeLine_whenLineHasToken`
-- `Test_Classify_shouldNotCountLine_whenLineIsBlank`
-- `Test_Classify_shouldCountCommentLine_whenCommentHasContent`: テーブル。`// text`、`/* text */`、ライセンスヘッダー
-- `Test_Classify_shouldNotCountCommentLine_whenCommentIsEmptyOrDirective`: テーブル。`//`、`//   `、`//go:generate x`、`//go:build x`、`//nolint:errcheck`、`//lint:ignore SA1`、`//line a.go:1`、`/* */`
-- `Test_Classify_shouldCountCommentLine_whenTextOnlyResemblesDirective`: テーブル。`// go:generate`、`//lines`、`// nolint`
-- `Test_Classify_shouldSkipBlankInnerLines_whenBlockCommentSpansLines`: 空行と `*` だけの行を含む
-- `Test_Classify_shouldCountBothCodeAndComment_whenLineHasTrailingComment`: テーブル。`x := 1 // note`、`/* a */ x := 1`、複数行 `/* */` の最終行の後ろにコード
-- `Test_Classify_shouldCountEveryLineAsCode_whenRawStringSpansLines`
-- `Test_Classify_shouldClassifySameAsLF_whenSourceUsesCRLF`
-- `Test_Lines_Code_shouldReturnZero_whenRangeIsEmpty`
-- `Test_Lines_Code_shouldClampRange_whenRangeExceedsFile`
-- `Test_Classify_shouldReturnErrScan_whenSourceHasIllegalCharacter`: NUL など
+実装済み。挙動は `internal/linecount/linecount_test.go` を参照。
 
 ---
 
