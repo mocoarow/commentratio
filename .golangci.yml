@@ -1,0 +1,134 @@
+---
+version: "2"
+run:
+  go: "1.26"
+linters:
+  enable:
+    - asasalint
+    - bodyclose
+    - canonicalheader
+    - decorder
+    - dupl
+    - dupword
+    - errorlint
+    - errchkjson
+    - errcheck
+    - exhaustive
+    - exhaustruct
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - gocritic
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gocognit
+    - goconst
+    - gocyclo
+    - gosec
+    - iface
+    - importas
+    - intrange
+    - interfacebloat
+    - ireturn
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - modernize
+    - musttag
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - reassign
+    - revive
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - tagliatelle
+    - testifylint
+    - testpackage
+    - thelper
+    - unconvert
+    - whitespace
+    - wrapcheck
+    - wsl_v5
+  settings:
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^fmt\.Print.*$
+        - pattern: ^(github\.com/stretchr/testify/(assert|require)\.Errorf?|(assert|require)\.Errorf?)$
+          msg: "use ErrorIs or ErrorContains instead of Error"
+    gocognit:
+      min-complexity: 20
+    gocyclo:
+      min-complexity: 12
+    gosec:
+      excludes:
+        - G115
+    revive:
+      severity: warning
+      enable-default-rules: true
+      # enable-all-rules: true
+      rules:
+        - name: line-length-limit
+          disabled: true
+        - name: add-constant
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+    tagliatelle:
+      case:
+        rules:
+          # Settings keys follow the golangci-lint convention (e.g. max-lines).
+          json: kebab
+    wrapcheck:
+      extra-ignore-sigs:
+        - errors.Errorf(
+        - .Errorf(
+        - .Errorf
+      ignore-sigs:
+        - errors.Errorf(
+        - .Errorf(
+        - .Errorf
+        - errors.New(
+    wsl_v5:
+      disable:
+        - if
+        - expr
+        - append
+        - range
+        - assign
+        - decl
+        - return
+        - defer
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
+          - exhaustruct
+          - goconst
+          - gochecknoglobals
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
