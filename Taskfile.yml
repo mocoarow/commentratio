@@ -1,0 +1,38 @@
+---
+version: "3"
+
+dotenv: ['.env']
+
+vars:
+  MIN_COVERAGE: 80
+
+tasks:
+  fmt:
+    cmds:
+      - golangci-lint fmt ./...
+
+  lint:
+    cmds:
+      - go vet ./...
+      - golangci-lint run ./...
+
+  test:
+    cmds:
+      - go test -v -race -coverprofile="coverage.txt" -covermode=atomic ./... -count=1
+
+  cover:
+    deps: [test]
+    cmds:
+      - |
+        total=$(go tool cover -func=coverage.txt | grep '^total:' | grep -oE '[0-9]+(\.[0-9]+)?')
+        echo "coverage: ${total}%"
+        if [ "${total%.*}" -lt {{.MIN_COVERAGE}} ]; then
+          echo "coverage is below {{.MIN_COVERAGE}}%"
+          exit 1
+        fi
+
+  check:
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: cover
