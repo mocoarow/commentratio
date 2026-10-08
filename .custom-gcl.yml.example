@@ -1,0 +1,11 @@
+---
+# Copy to .custom-gcl.yml and run `golangci-lint custom` to build a golangci-lint binary with commentratio.
+version: v2.12.1
+name: custom-gcl
+destination: ./bin
+plugins:
+  - module: github.com/mocoarow/commentratio
+    import: github.com/mocoarow/commentratio/plugin
+    version: v0.1.0
+    # For local development, use the path to a clone instead of version.
+    # path: ../commentratio
