@@ -153,7 +153,7 @@ comments in body of ParseUser are too many: 6 comment lines for 12 code lines (m
 file comments are too many: 40 comment lines for 100 code lines (max 30)
 ```
 
-`func-body` の位置は本体内で最初のコメントの位置、`file` の位置は `package` キーワードの位置とする（1 行目がライセンスヘッダーでも `//nolint` を置けるように）。
+`file` の位置は `package` キーワードの位置とする（1 行目がライセンスヘッダーでも `//nolint` を置けるように）。
 
 メッセージ中の名前は、関数は `F`、メソッドは `T.M`（ポインタと型パラメータを除いた受信者型名）、まとめた宣言は最初の spec の最初の識別子名とする。
 
