@@ -41,6 +41,7 @@ const (
 	keyFuncBody = "func-body"
 	keyFile     = "file"
 
+	keyEnabled     = "enabled"
 	keyFreeLines   = "free-lines"
 	keyMaxRatio    = "max-ratio"
 	keyMaxLines    = "max-lines"

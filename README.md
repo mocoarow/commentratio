@@ -5,7 +5,7 @@
 Existing linters can limit the length of a comment, but not its length relative to the code it documents.
 
 > [!NOTE]
-> This project is under development. Only the settings are implemented so far. The analyzer, the standalone command and the golangci-lint plugin are not available yet, and the checks below describe the planned behavior.
+> This project is under development. The analyzer is available as a Go API (`commentratio.NewAnalyzer`), but the standalone command and the golangci-lint plugin are not available yet.
 
 ## Checks
 
@@ -28,6 +28,7 @@ Existing linters can limit the length of a comment, but not its length relative 
 - A line with a trailing comment (`x := 1 // note`) counts as both a code line and a comment line.
 - Every line of a multi-line raw string counts as a code line, including blank lines inside it.
 - Generated files are skipped. `_test.go` files are checked.
+- Files that `import "C"` are skipped, because cgo hands the analyzer generated files instead.
 
 ## Rules
 
