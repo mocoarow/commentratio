@@ -29,16 +29,16 @@
 
 ## フェーズ
 
-| # | 内容 | 規模 |
-|---|---|---|
-| a | go.mod と設定 | 小 |
-| b | `internal/linecount`: 行の分類と範囲の行数 | 中 |
-| c | `internal/judge`: 上限と GoDoc 必須の判定 | 小 |
-| d | Analyzer への組み込み、4 対象のチェック、フラグ | 大 |
-| e | 単体コマンド | 小 |
-| f | golangci-lint plugin | 小 |
-| g | README、`.golangci.yml`、`Taskfile.yml` | 小 |
-| h | cocotola-1.26 での調整 | 中 |
+| # | 内容 | 規模 | 進捗 |
+|---|---|---|---|
+| a | go.mod と設定 | 小 | 済（#1） |
+| b | `internal/linecount`: 行の分類と範囲の行数 | 中 | 済（#4） |
+| c | `internal/judge`: 上限と GoDoc 必須の判定 | 小 | 済（#3） |
+| d | Analyzer への組み込み、4 対象のチェック、フラグ | 大 | 済（#5） |
+| e | 単体コマンド | 小 | コミット待ち（feat/cmd-plugin） |
+| f | golangci-lint plugin | 小 | コミット待ち（feat/cmd-plugin）。マージ後に v0.1.0 のタグを打つ（`.custom-gcl.yml.example` が参照する） |
+| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2）。README の使い方と `build` タスクはコミット待ち（feat/cmd-plugin）。`custom-gcl` と `calibrate` タスクは未 |
+| h | cocotola-1.26 での調整 | 中 | 未着手 |
 
 見込み: 本体コード約 600 行、テストと testdata 約 1000 行。
 
@@ -70,52 +70,19 @@
 
 ### (e) cmd/commentratio
 
-作成するファイル: `cmd/commentratio/doc.go`、`main.go`
-
-- `commentratio.NewAnalyzer(commentratio.DefaultSettings())` が失敗したら `slog.Error("create analyzer", "error", err)` の後に `os.Exit(1)`（`os.Exit` は main の中だけ）
-- 成功したら `singlechecker.Main(a)`
-- テストは書かない（フラグの挙動は (d) で検証済み）。カバレッジ計測の対象外にする
+実装済み。テストはない（フラグの挙動は (d) のテストで検証している）。
 
 ---
 
 ### (f) plugin
 
-作成するファイル: `plugin/doc.go`、`plugin.go`、`plugin_test.go`、`.custom-gcl.yml.example`
-
-```go
-// golangci-lint の module plugin は init での登録が必須で、代替手段がないため例外的に init を使う。
-func init() { register.Plugin(commentratio.Name, New) } //nolint:gochecknoinits
-
-func New(settings any) (register.LinterPlugin, error) // commentratio.DecodeSettings → fmt.Errorf("decode settings: %w", err)
-
-type Plugin struct{ settings commentratio.Settings }
-
-func (p Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) // NewAnalyzer。エラーは "build analyzer: %w"
-func (p Plugin) GetLoadMode() string                           // register.LoadModeSyntax
-```
-
-テスト:
-
-- `Test_New_shouldReturnPlugin_whenSettingsAreValid`
-- `Test_New_shouldReturnErrInvalidSettings_whenSettingsAreInvalid`
-- `Test_Plugin_BuildAnalyzers_shouldReturnCommentratioAnalyzer_whenCalled`
-- `Test_Plugin_GetLoadMode_shouldReturnSyntax_whenCalled`
-
-`.custom-gcl.yml.example`: `version`（golangci-lint のバージョン）と `plugins: [{module: github.com/mocoarow/commentratio, import: github.com/mocoarow/commentratio/plugin, version: v0.1.0}]`。ローカル開発用に `path: .` の例も載せる。
+実装済み。挙動は `plugin/plugin_test.go` を参照。
 
 ---
 
 ### (g) README、golangci 設定、Taskfile
 
-- README:
-  - 単体コマンドのインストールと全フラグの一覧
-  - `golangci-lint custom` の手順
-  - `.golangci.yml` の例（`linters.enable: [commentratio]` と settings ブロック）
-  - 判定式と行数の数え方の要約
-  - `//nolint:commentratio` の置き場所
-  - 制約: cgo のファイルは生成ファイル扱いでチェックされない
-- `.golangci.yml`（v2）: cocotola-1.26 の設定をもとに作る
-- `Taskfile.yml`（cocotola-1.26 に合わせる）: `fmt`、`lint`、`test`（`go test -race -coverprofile`）、`cover`（80% 未満で失敗）、`build`、`custom-gcl`、`check`（fmt / vet / lint / test）、`calibrate`
+残り: `Taskfile.yml` の `custom-gcl`、`calibrate` タスク。
 
 ---
 
@@ -128,17 +95,6 @@ func (p Plugin) GetLoadMode() string                           // register.LoadM
 5. 決めた値を仕様の表、`DefaultSettings`、`Test_DefaultSettings_shouldReturnDefaults_whenCalled` に同時に反映する
 
 cocotola-1.26 側のファイルは変更しない。
-
-## リスクと対策
-
-| リスク | 対策 |
-|---|---|
-| `// want` が行末コメントとして数えられ、期待値がずれる | doc 行の末尾に `// ... // want` 形式で書く。識別子行や package 行に書く場合は 1 行増える前提で設計する |
-| analysistest がテストファイルを読むとき、テスト用バリアントで警告が重複する | (d) の最初に `_test.go` 用の小さな testdata で確認する。重複したら testdata を分ける |
-| `pass.ReadFile` が x/tools のバージョンによって使えない | 最新の x/tools に固定する。使えなければ `os.ReadFile(tf.Name())` に切り替える |
-| cgo のファイルが生成ファイル扱いになる | README に制約として書く |
-| golangci-lint から渡る settings の型が想定と違う | `DecodeSettings` が JSON を経由するので吸収できる。(f) の後に実際の custom バイナリで確認する |
-| 浮動小数点の誤差で上限が 1 小さくなる | `ratioEpsilon` を入れ、テストで固定する |
 
 ## 品質ゲート
 

@@ -31,6 +31,10 @@ tasks:
           exit 1
         fi
 
+  build:
+    cmds:
+      - go build -o bin/commentratio ./cmd/commentratio
+
   check:
     cmds:
       - task: fmt

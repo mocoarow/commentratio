@@ -5,7 +5,39 @@
 Existing linters can limit the length of a comment, but not its length relative to the code it documents.
 
 > [!NOTE]
-> This project is under development. The analyzer is available as a Go API (`commentratio.NewAnalyzer`), but the standalone command and the golangci-lint plugin are not available yet.
+> This project is under development. The default values are not tuned yet.
+
+## Usage
+
+### Standalone command
+
+```bash
+go install github.com/mocoarow/commentratio/cmd/commentratio@latest
+commentratio ./...
+commentratio -func-doc.max-lines=20 -file.enabled=false ./...
+```
+
+Every setting in [Settings](#settings) is also a flag named `<key>.<setting>`.
+
+### golangci-lint plugin
+
+Copy [.custom-gcl.yml.example](.custom-gcl.yml.example) to `.custom-gcl.yml`, run `golangci-lint custom` to build `./bin/custom-gcl`, and enable the linter in `.golangci.yml`:
+
+```yaml
+version: "2"
+linters:
+  enable:
+    - commentratio
+  settings:
+    custom:
+      commentratio:
+        type: module
+        settings:
+          func-doc:
+            max-lines: 20
+```
+
+To suppress a report, add `//nolint:commentratio` on its own line above the reported line, or as a line of the reported doc comment. A missing GoDoc report, or the file report on the `package` line, can also be suppressed at the end of the reported line.
 
 ## Checks
 
@@ -60,7 +92,7 @@ A GoDoc that contains only directives counts as missing. Setting `require-from` 
 | `func-body` | 2 | 0.2 | 10 | — |
 | `file` | 5 | 0.3 | 200 | — |
 
-The table shows the default values. Settings go under `linters.settings.custom.commentratio.settings` in `.golangci.yml` for the planned golangci-lint plugin. For example, to allow longer function GoDocs and disable the file check:
+The table shows the default values. For the golangci-lint plugin, settings go under `linters.settings.custom.commentratio.settings` in `.golangci.yml`. For example, to allow longer function GoDocs and disable the file check:
 
 ```yaml
 func-doc:
@@ -84,6 +116,7 @@ task lint   # go vet and golangci-lint
 task test   # tests with race detector and coverage
 task cover  # tests, failing if coverage is below 80%
 task check  # fmt, lint and cover
+task build  # build bin/commentratio
 ```
 
 ## License
