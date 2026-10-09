@@ -70,6 +70,7 @@ code_lines >= require-from かつ 識別子が公開されている かつ GoDoc
 - 数えるべき GoDoc の行が 0 行なら「GoDoc なし」とみなす。ディレクティブ（`//nolint` など）だけが付いている場合も GoDoc なし
 - 公開の判定は `ast.IsExported`（識別子名）で行う。メソッドはメソッド名で判定する
 - `decl-doc` では、`GenDecl` と spec のどちらかに GoDoc があれば「GoDoc あり」とみなす。spec 内に公開識別子が 1 つでもあれば公開とみなす
+- `_test.go` のテスト関数（レシーバがなく、`Test`・`Benchmark`・`Fuzz`・`Example` の直後が小文字でない関数）は判定しない
 
 ## 設定
 

@@ -35,10 +35,11 @@
 | b | `internal/linecount`: 行の分類と範囲の行数 | 中 | 済（#4） |
 | c | `internal/judge`: 上限と GoDoc 必須の判定 | 小 | 済（#3） |
 | d | Analyzer への組み込み、4 対象のチェック、フラグ | 大 | 済（#5） |
-| e | 単体コマンド | 小 | コミット待ち（feat/cmd-plugin） |
-| f | golangci-lint plugin | 小 | コミット待ち（feat/cmd-plugin）。マージ後に v0.1.0 のタグを打つ（`.custom-gcl.yml.example` が参照する） |
-| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2）。README の使い方と `build` タスクはコミット待ち（feat/cmd-plugin）。`custom-gcl` と `calibrate` タスクは未 |
+| e | 単体コマンド | 小 | コミット済み、PR 待ち（feat/cmd-plugin） |
+| f | golangci-lint plugin | 小 | コミット済み、PR 待ち（feat/cmd-plugin）。マージ後に v0.1.0 のタグを打つ（`.custom-gcl.yml.example` が参照する） |
+| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2）。README の使い方と `build` タスクはコミット済み、PR 待ち（feat/cmd-plugin）。`custom-gcl` と `calibrate` タスクは未 |
 | h | cocotola-1.26 での調整 | 中 | 未着手 |
+| i | テスト関数を GoDoc なしの判定から外す | 小 | コミット待ち（feat/skip-test-func-doc。feat/cmd-plugin の上に作成） |
 
 見込み: 本体コード約 600 行、テストと testdata 約 1000 行。
 
@@ -46,37 +47,37 @@
 
 ### (a) go.mod と設定
 
-実装済み。挙動は `settings_test.go` を参照。
+挙動は `settings_test.go` を参照。
 
 ---
 
 ### (b) internal/linecount
 
-実装済み。挙動は `internal/linecount/linecount_test.go` を参照。
+挙動は `internal/linecount/linecount_test.go` を参照。
 
 ---
 
 ### (c) internal/judge
 
-実装済み。挙動は `internal/judge/judge_test.go` を参照。
+挙動は `internal/judge/judge_test.go` を参照。
 
 ---
 
 ### (d) Analyzer への組み込み
 
-実装済み。挙動は `analyzer_test.go`、`flags_test.go`、`testdata/src/` を参照。
+挙動は `analyzer_test.go`、`flags_test.go`、`testdata/src/` を参照。
 
 ---
 
 ### (e) cmd/commentratio
 
-実装済み。テストはない（フラグの挙動は (d) のテストで検証している）。
+テストはない（フラグの挙動は (d) のテストで検証している）。
 
 ---
 
 ### (f) plugin
 
-実装済み。挙動は `plugin/plugin_test.go` を参照。
+挙動は `plugin/plugin_test.go` を参照。
 
 ---
 
@@ -95,6 +96,12 @@
 5. 決めた値を仕様の表、`DefaultSettings`、`Test_DefaultSettings_shouldReturnDefaults_whenCalled` に同時に反映する
 
 cocotola-1.26 側のファイルは変更しない。
+
+### (i) テスト関数の除外
+
+(e)〜(f) の後、このリポジトリ自身にかけたときに、規約どおりのテスト関数が GoDoc なしで警告されたため追加（2026-10-09 決定）。挙動は `testdata/src/testfuncs`、`testfuncslookalike`、`testfuncsnontest`、`testfile` を参照。
+
+---
 
 ## 品質ゲート
 

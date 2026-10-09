@@ -81,7 +81,7 @@ report if comment_lines > limit
 report if code_lines >= require-from and the identifier is exported and it has no GoDoc
 ```
 
-A GoDoc that contains only directives counts as missing. Setting `require-from` to `0` disables this check.
+A GoDoc that contains only directives counts as missing. Setting `require-from` to `0` disables this check. Test, benchmark, fuzz and example functions in `_test.go` files are exempt from this check.
 
 ## Settings
 

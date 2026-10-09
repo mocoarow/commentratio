@@ -85,6 +85,36 @@ func Test_Analyzer_Run_shouldReturnErrInvalidSettings_whenFlagValueIsInvalid(t *
 	require.ErrorIs(t, err, commentratio.ErrInvalidSettings)
 }
 
+func Test_NewAnalyzer_shouldNotReportMissingFuncDoc_whenFuncIsTestFunc(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFuncDoc)
+
+	// when, then
+	runAnalyzer(t, s, "testfuncs")
+}
+
+func Test_NewAnalyzer_shouldReportMissingFuncDoc_whenFuncOnlyLooksLikeTestFunc(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFuncDoc)
+
+	// when, then
+	runAnalyzer(t, s, "testfuncslookalike")
+}
+
+func Test_NewAnalyzer_shouldReportMissingFuncDoc_whenTestFuncIsInNonTestFile(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFuncDoc)
+
+	// when, then
+	runAnalyzer(t, s, "testfuncsnontest")
+}
+
 func Test_NewAnalyzer_shouldNotReportFuncDoc_whenDocIsWithinLimit(t *testing.T) {
 	t.Parallel()
 
