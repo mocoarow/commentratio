@@ -3,6 +3,9 @@ package commentratio
 import (
 	"go/ast"
 	"go/token"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/mocoarow/commentratio/internal/judge"
 	"github.com/mocoarow/commentratio/internal/linecount"
@@ -49,7 +52,27 @@ func (c fileContext) checkFuncDoc(rule DocRule, d *ast.FuncDecl) {
 	code := c.codeLines(d.Pos(), d.End())
 
 	c.reportLongDoc(rule.Rule, d.Doc, name, code)
-	c.reportMissingDoc(rule, d.Name, name, code, c.commentLines(d.Doc) > 0)
+
+	if !c.isTestFunc(d) {
+		c.reportMissingDoc(rule, d.Name, name, code, c.commentLines(d.Doc) > 0)
+	}
+}
+
+func (c fileContext) isTestFunc(d *ast.FuncDecl) bool {
+	if d.Recv != nil || !strings.HasSuffix(c.tf.Name(), "_test.go") {
+		return false
+	}
+
+	for _, prefix := range []string{"Test", "Benchmark", "Fuzz", "Example"} {
+		rest, ok := strings.CutPrefix(d.Name.Name, prefix)
+		first, _ := utf8.DecodeRuneInString(rest)
+
+		if ok && (rest == "" || !unicode.IsLower(first)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c fileContext) checkFuncBody(rule Rule, d *ast.FuncDecl) {
