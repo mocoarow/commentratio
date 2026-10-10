@@ -1,7 +1,7 @@
 package specbody
 
 func ParseUser() {
-	// comment 1 // want `comments in body of ParseUser are too many: 6 comment lines for 12 code lines \(max 2\)`
+	// comment 1 // want `comments in body of ParseUser are too many: 6 comment lines for 12 code lines \(max 3\)`
 	// comment 2
 	// comment 3
 	// comment 4

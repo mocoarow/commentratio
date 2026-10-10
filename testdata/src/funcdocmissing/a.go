@@ -6,9 +6,17 @@ func Exact() { // want `Exact has no doc comment: 5 code lines \(doc required fr
 	_ = 3
 }
 
-type t struct{}
+type T struct{}
 
-func (x t) Method() { // want `t.Method has no doc comment: 5 code lines \(doc required from 5\)`
+func (t *T) Method() { // want `T.Method has no doc comment: 5 code lines \(doc required from 5\)`
+	_ = 1
+	_ = 2
+	_ = 3
+}
+
+type G[X any] struct{}
+
+func (g G[X]) Method() { // want `G.Method has no doc comment: 5 code lines \(doc required from 5\)`
 	_ = 1
 	_ = 2
 	_ = 3

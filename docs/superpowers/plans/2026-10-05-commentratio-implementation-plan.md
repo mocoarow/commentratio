@@ -35,11 +35,12 @@
 | b | `internal/linecount`: 行の分類と範囲の行数 | 中 | 済（#4） |
 | c | `internal/judge`: 上限と GoDoc 必須の判定 | 小 | 済（#3） |
 | d | Analyzer への組み込み、4 対象のチェック、フラグ | 大 | 済（#5） |
-| e | 単体コマンド | 小 | コミット済み、PR 待ち（feat/cmd-plugin） |
-| f | golangci-lint plugin | 小 | コミット済み、PR 待ち（feat/cmd-plugin）。マージ後に v0.1.0 のタグを打つ（`.custom-gcl.yml.example` が参照する） |
-| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2）。README の使い方と `build` タスクはコミット済み、PR 待ち（feat/cmd-plugin）。`custom-gcl` と `calibrate` タスクは未 |
-| h | cocotola-1.26 での調整 | 中 | 未着手 |
-| i | テスト関数を GoDoc なしの判定から外す | 小 | コミット待ち（feat/skip-test-func-doc。feat/cmd-plugin の上に作成） |
+| e | 単体コマンド | 小 | 済（#6） |
+| f | golangci-lint plugin | 小 | 済（#6）。v0.1.0 のタグ済み |
+| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2、#6）。`custom-gcl` と `calibrate` タスクは未 |
+| h | cocotola-1.26 での調整 | 中 | コミット待ち（feat/calibrate-on-cocotola） |
+| i | テスト関数を GoDoc なしの判定から外す | 小 | 済（#7） |
+| j | 非公開の型のメソッドを GoDoc なしの判定から外す | 小 | コミット待ち（feat/calibrate-on-cocotola） |
 
 見込み: 本体コード約 600 行、テストと testdata 約 1000 行。
 
@@ -89,17 +90,19 @@
 
 ### (h) cocotola-1.26 での調整
 
-1. `go build -o bin/commentratio ./cmd/commentratio`
-2. cocotola-1.26 の `Taskfile.yml` にある GO_PROJECTS の各ディレクトリで、`GOFLAGS=-tags=small,medium,large bin/commentratio -json ./...` を実行する（go.work 経由ではなくモジュールごと）
-3. メッセージの種類（4 対象 × 多すぎ / GoDoc なし）ごとに件数を集計し、各種類から 10 件ずつ誤検知かどうかを確認する
-4. フラグで値を変えながら件数の変化を表にまとめる
-5. 決めた値を仕様の表、`DefaultSettings`、`Test_DefaultSettings_shouldReturnDefaults_whenCalled` に同時に反映する
+cocotola-1.26 の各 Go モジュールで `GOFLAGS=-tags=small,medium,large bin/commentratio -json ./...` を実行し、誤検知を見て値を決める。cocotola-1.26 側のファイルは変更しない。決めた値と理由は仕様の「デフォルト値」を参照。
 
-cocotola-1.26 側のファイルは変更しない。
+---
 
 ### (i) テスト関数の除外
 
 (e)〜(f) の後、このリポジトリ自身にかけたときに、規約どおりのテスト関数が GoDoc なしで警告されたため追加（2026-10-09 決定）。挙動は `testdata/src/testfuncs`、`testfuncslookalike`、`testfuncsnontest`、`testfile` を参照。
+
+---
+
+### (j) 非公開の型のメソッド
+
+(h) で「GoDoc なし」の 4 件がすべて非公開の型の公開名メソッドだったため追加（2026-10-11 決定）。golint・revive の exported ルールと同じ扱いで、公開の型に埋め込まれて昇格するメソッドも判定しない。挙動は `testdata/src/funcdoc*` を参照。
 
 ---
 

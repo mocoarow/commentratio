@@ -81,7 +81,7 @@ report if comment_lines > limit
 report if code_lines >= require-from and the identifier is exported and it has no GoDoc
 ```
 
-A GoDoc that contains only directives counts as missing. Setting `require-from` to `0` disables this check. Test, benchmark, fuzz and example functions in `_test.go` files are exempt from this check.
+A GoDoc that contains only directives counts as missing. Setting `require-from` to `0` disables this check. Test, benchmark, fuzz and example functions in `_test.go` files are exempt from this check. A method counts as exported only when both the method and its receiver type are exported, as in golint and revive (methods promoted from an embedded unexported type are not checked).
 
 ## Settings
 
@@ -89,8 +89,8 @@ A GoDoc that contains only directives counts as missing. Setting `require-from` 
 | --- | --- | --- | --- | --- |
 | `func-doc` | 3 | 0.2 | 15 | 10 |
 | `decl-doc` | 3 | 0.2 | 15 | 10 |
-| `func-body` | 2 | 0.2 | 10 | — |
-| `file` | 5 | 0.3 | 200 | — |
+| `func-body` | 3 | 0.2 | 10 | — |
+| `file` | 5 | 0.4 | 200 | — |
 
 The table shows the default values. For the golangci-lint plugin, settings go under `linters.settings.custom.commentratio.settings` in `.golangci.yml`. For example, to allow longer function GoDocs and disable the file check:
 

@@ -53,7 +53,7 @@ func (c fileContext) checkFuncDoc(rule DocRule, d *ast.FuncDecl) {
 
 	c.reportLongDoc(rule.Rule, d.Doc, name, code)
 
-	if !c.isTestFunc(d) {
+	if !c.isTestFunc(d) && receiverExported(d) {
 		c.reportMissingDoc(rule, d.Name, name, code, c.commentLines(d.Doc) > 0)
 	}
 }
@@ -158,6 +158,14 @@ func funcName(d *ast.FuncDecl) string {
 	}
 
 	return receiverTypeName(d.Recv.List[0].Type) + "." + d.Name.Name
+}
+
+func receiverExported(d *ast.FuncDecl) bool {
+	if d.Recv == nil || len(d.Recv.List) == 0 {
+		return true
+	}
+
+	return token.IsExported(receiverTypeName(d.Recv.List[0].Type))
 }
 
 func receiverTypeName(expr ast.Expr) string {

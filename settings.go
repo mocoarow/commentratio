@@ -54,12 +54,12 @@ const (
 	defaultDocMaxLines    = 15
 	defaultDocRequireFrom = 10
 
-	defaultFuncBodyFreeLines = 2
+	defaultFuncBodyFreeLines = 3
 	defaultFuncBodyMaxRatio  = 0.2
 	defaultFuncBodyMaxLines  = 10
 
 	defaultFileFreeLines = 5
-	defaultFileMaxRatio  = 0.3
+	defaultFileMaxRatio  = 0.4
 	defaultFileMaxLines  = 200
 )
 

@@ -24,8 +24,8 @@ func Test_DefaultSettings_shouldReturnDefaults_whenCalled(t *testing.T) {
 			Rule:        commentratio.Rule{Enabled: true, FreeLines: 3, MaxRatio: 0.2, MaxLines: 15},
 			RequireFrom: 10,
 		},
-		FuncBody: commentratio.Rule{Enabled: true, FreeLines: 2, MaxRatio: 0.2, MaxLines: 10},
-		File:     commentratio.Rule{Enabled: true, FreeLines: 5, MaxRatio: 0.3, MaxLines: 200},
+		FuncBody: commentratio.Rule{Enabled: true, FreeLines: 3, MaxRatio: 0.2, MaxLines: 10},
+		File:     commentratio.Rule{Enabled: true, FreeLines: 5, MaxRatio: 0.4, MaxLines: 200},
 	}
 
 	// when
