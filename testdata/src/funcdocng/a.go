@@ -68,3 +68,11 @@ type P struct{}
 // line 3.
 func (p (P)) M() {
 }
+
+type u struct{}
+
+// M line 1. // want `doc comment of u.M is too long: 3 comment lines for 2 code lines \(max 2\)`
+// line 2.
+// line 3.
+func (x *u) M() {
+}

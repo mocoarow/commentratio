@@ -1,4 +1,4 @@
-package specfile // want `file comments are too many: 40 comment lines for 100 code lines \(max 30\)`
+package specfile // want `file comments are too many: 50 comment lines for 100 code lines \(max 40\)`
 
 // comment 2
 // comment 3
@@ -39,6 +39,16 @@ package specfile // want `file comments are too many: 40 comment lines for 100 c
 // comment 38
 // comment 39
 // comment 40
+// comment 41
+// comment 42
+// comment 43
+// comment 44
+// comment 45
+// comment 46
+// comment 47
+// comment 48
+// comment 49
+// comment 50
 
 var v1 = 1
 var v2 = 2

@@ -68,7 +68,7 @@ code_lines >= require-from かつ 識別子が公開されている かつ GoDoc
 
 - `require-from` が 0 のときはチェックしない
 - 数えるべき GoDoc の行が 0 行なら「GoDoc なし」とみなす。ディレクティブ（`//nolint` など）だけが付いている場合も GoDoc なし
-- 公開の判定は `ast.IsExported`（識別子名）で行う。メソッドはメソッド名で判定する
+- 公開の判定は識別子名で行う。メソッドはメソッド名と受信者型名の両方が公開のときだけ公開とみなす（golint・revive の exported ルールと同じ扱い。公開の型に埋め込まれて昇格するメソッドも判定しない）
 - `decl-doc` では、`GenDecl` と spec のどちらかに GoDoc があれば「GoDoc あり」とみなす。spec 内に公開識別子が 1 つでもあれば公開とみなす
 - `_test.go` のテスト関数（レシーバがなく、`Test`・`Benchmark`・`Fuzz`・`Example` の直後が小文字でない関数）は判定しない
 
@@ -80,10 +80,10 @@ code_lines >= require-from かつ 識別子が公開されている かつ GoDoc
 |---|---|---|---|---|
 | `func-doc` | 3 | 0.2 | 15 | 10 |
 | `decl-doc` | 3 | 0.2 | 15 | 10 |
-| `func-body` | 2 | 0.2 | 10 | — |
-| `file` | 5 | 0.3 | 200 | — |
+| `func-body` | 3 | 0.2 | 10 | — |
+| `file` | 5 | 0.4 | 200 | — |
 
-`file` の比率を緩めにしているのは、ファイル全体の数字に GoDoc も含まれるため。数値は初期案であり、実装後に実際のコードベースで警告数を見て調整する。
+`func-body` の `free-lines` を 3 にしているのは、テスト関数の given/when/then コメント（3 行）を常に許すため。`file` の比率を緩めにしているのは、ファイル全体の数字に GoDoc と、テストごとの given/when/then が積み上がるため。値は cocotola-1.26 で警告数と誤検知を確認して決めた（2026-10-11）。
 
 `func-doc` の上限の例:
 
@@ -119,13 +119,13 @@ linters:
             require-from: 10
           func-body:
             enabled: true
-            free-lines: 2
+            free-lines: 3
             max-ratio: 0.2
             max-lines: 10
           file:
             enabled: true
             free-lines: 5
-            max-ratio: 0.3
+            max-ratio: 0.4
             max-lines: 200
 ```
 
@@ -150,8 +150,8 @@ linters:
 doc comment of ParseUser is too long: 10 comment lines for 10 code lines (max 3)
 doc comment of User is too long: 20 comment lines for 30 code lines (max 6)
 ParseUser has no doc comment: 20 code lines (doc required from 10)
-comments in body of ParseUser are too many: 6 comment lines for 12 code lines (max 2)
-file comments are too many: 40 comment lines for 100 code lines (max 30)
+comments in body of ParseUser are too many: 6 comment lines for 12 code lines (max 3)
+file comments are too many: 50 comment lines for 100 code lines (max 40)
 ```
 
 `file` の位置は `package` キーワードの位置とする（1 行目がライセンスヘッダーでも `//nolint` を置けるように）。

@@ -18,3 +18,11 @@ func _() {
 }
 
 func NoBody(a, b int) int
+
+type unexportedType struct{}
+
+func (x *unexportedType) Method() {
+	_ = 1
+	_ = 2
+	_ = 3
+}
