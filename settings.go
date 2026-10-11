@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
+
+	"github.com/mocoarow/commentratio/internal/linecount"
 )
 
 // ErrInvalidSettings is returned when settings cannot be decoded or contain invalid values.
@@ -28,18 +31,21 @@ type DocRule struct {
 }
 
 // Settings holds the rules for all check targets.
+// A comment line whose text matches one of IgnorePatterns is not counted by any target.
 type Settings struct {
-	FuncDoc  DocRule `json:"func-doc"`
-	DeclDoc  DocRule `json:"decl-doc"`
-	FuncBody Rule    `json:"func-body"`
-	File     Rule    `json:"file"`
+	FuncDoc        DocRule  `json:"func-doc"`
+	DeclDoc        DocRule  `json:"decl-doc"`
+	FuncBody       Rule     `json:"func-body"`
+	File           Rule     `json:"file"`
+	IgnorePatterns []string `json:"ignore-patterns"`
 }
 
 const (
-	keyFuncDoc  = "func-doc"
-	keyDeclDoc  = "decl-doc"
-	keyFuncBody = "func-body"
-	keyFile     = "file"
+	keyFuncDoc        = "func-doc"
+	keyDeclDoc        = "decl-doc"
+	keyFuncBody       = "func-body"
+	keyFile           = "file"
+	keyIgnorePatterns = "ignore-patterns"
 
 	keyEnabled     = "enabled"
 	keyFreeLines   = "free-lines"
@@ -90,6 +96,7 @@ func DefaultSettings() Settings {
 			MaxRatio:  defaultFileMaxRatio,
 			MaxLines:  defaultFileMaxLines,
 		},
+		IgnorePatterns: nil,
 	}
 }
 
@@ -107,7 +114,35 @@ func (s Settings) Validate() error {
 		return err
 	}
 
-	return s.File.validate(keyFile)
+	if err := s.File.validate(keyFile); err != nil {
+		return err
+	}
+
+	_, err := s.ignore()
+
+	return err
+}
+
+func (s Settings) ignore() (linecount.Ignore, error) {
+	patterns := make([]*regexp.Regexp, len(s.IgnorePatterns))
+	for i, p := range s.IgnorePatterns {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s[%d]: %w", ErrInvalidSettings, keyIgnorePatterns, i, err)
+		}
+
+		patterns[i] = re
+	}
+
+	return func(text string) bool {
+		for _, re := range patterns {
+			if re.MatchString(text) {
+				return true
+			}
+		}
+
+		return false
+	}, nil
 }
 
 func (r DocRule) validate(name string) error {

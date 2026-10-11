@@ -49,12 +49,17 @@ func (r *runner) run(pass *analysis.Pass) (any, error) {
 		return nil, fmt.Errorf("validate settings: %w", err)
 	}
 
+	ignore, err := r.settings.ignore()
+	if err != nil {
+		return nil, fmt.Errorf("compile ignore patterns: %w", err)
+	}
+
 	for _, f := range pass.Files {
 		if ast.IsGenerated(f) {
 			continue
 		}
 
-		c, err := newFileContext(pass, f)
+		c, err := newFileContext(pass, f, ignore)
 		if err != nil {
 			return nil, err
 		}
@@ -66,13 +71,14 @@ func (r *runner) run(pass *analysis.Pass) (any, error) {
 }
 
 type fileContext struct {
-	pass  *analysis.Pass
-	file  *ast.File
-	tf    *token.File
-	lines linecount.Lines
+	pass   *analysis.Pass
+	file   *ast.File
+	tf     *token.File
+	lines  linecount.Lines
+	ignore linecount.Ignore
 }
 
-func newFileContext(pass *analysis.Pass, f *ast.File) (fileContext, error) {
+func newFileContext(pass *analysis.Pass, f *ast.File, ignore linecount.Ignore) (fileContext, error) {
 	tf := pass.Fset.File(f.Pos())
 
 	src, err := pass.ReadFile(tf.Name())
@@ -80,12 +86,12 @@ func newFileContext(pass *analysis.Pass, f *ast.File) (fileContext, error) {
 		return fileContext{}, fmt.Errorf("read %s: %w", tf.Name(), err)
 	}
 
-	lines, err := linecount.Classify(tf.Name(), src)
+	lines, err := linecount.Classify(tf.Name(), src, ignore)
 	if err != nil {
 		return fileContext{}, fmt.Errorf("classify %s: %w", tf.Name(), err)
 	}
 
-	return fileContext{pass: pass, file: f, tf: tf, lines: lines}, nil
+	return fileContext{pass: pass, file: f, tf: tf, lines: lines, ignore: ignore}, nil
 }
 
 // line ignores //line directives so that it matches the lines counted by linecount.

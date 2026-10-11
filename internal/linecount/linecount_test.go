@@ -13,10 +13,53 @@ import (
 func classify(t *testing.T, src string) linecount.Lines {
 	t.Helper()
 
-	lines, err := linecount.Classify("a.go", []byte(src))
+	lines, err := linecount.Classify("a.go", []byte(src), nil)
 	require.NoError(t, err)
 
 	return lines
+}
+
+func ignoreGiven(text string) bool { return text == "given" }
+
+func Test_Classify_shouldNotCountCommentLine_whenIgnoreMatchesText(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		line string
+	}{
+		{name: "line comment", line: "//   given  "},
+		{name: "block comment", line: "/* given */"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			src := srcWithLine3(tt.line)
+
+			// when
+			lines, err := linecount.Classify("a.go", []byte(src), ignoreGiven)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 0, lines.Comment(3, 3))
+		})
+	}
+}
+
+func Test_Classify_shouldCountCommentLine_whenIgnoreDoesNotMatchText(t *testing.T) {
+	t.Parallel()
+
+	// given
+	src := srcWithLine3("// given more")
+
+	// when
+	lines, err := linecount.Classify("a.go", []byte(src), ignoreGiven)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, 1, lines.Comment(3, 3))
 }
 
 func srcWithLine3(line string) string {
@@ -258,7 +301,7 @@ func Test_Classify_shouldReportFirstError_whenSourceHasManyErrors(t *testing.T) 
 	src := []byte("package a\n#\n#\n")
 
 	// when
-	_, err := linecount.Classify("a.go", src)
+	_, err := linecount.Classify("a.go", src, nil)
 
 	// then
 	require.ErrorContains(t, err, "a.go:2:1")
@@ -271,7 +314,7 @@ func Test_Classify_shouldNotReportLaterErrors_whenSourceHasManyErrors(t *testing
 	src := []byte("package a\n#\n#\n")
 
 	// when
-	_, err := linecount.Classify("a.go", src)
+	_, err := linecount.Classify("a.go", src, nil)
 
 	// then
 	require.ErrorIs(t, err, linecount.ErrScan)
@@ -285,7 +328,7 @@ func Test_Classify_shouldReportPhysicalPosition_whenErrorFollowsLineDirective(t 
 	src := []byte("package a\n\n//line other.go:100\n#\n")
 
 	// when
-	_, err := linecount.Classify("a.go", src)
+	_, err := linecount.Classify("a.go", src, nil)
 
 	// then
 	require.ErrorContains(t, err, "a.go:4:1")
@@ -298,7 +341,7 @@ func Test_Classify_shouldReturnErrScan_whenSourceHasIllegalCharacter(t *testing.
 	src := []byte("package a\n\x00\n")
 
 	// when
-	_, err := linecount.Classify("a.go", src)
+	_, err := linecount.Classify("a.go", src, nil)
 
 	// then
 	require.ErrorIs(t, err, linecount.ErrScan)
@@ -402,10 +445,23 @@ func Test_CommentLineFlags_shouldFlagLinesWithContent_whenBlockCommentSpansLines
 	lit := "/* first\n *\n * second\n\n*/"
 
 	// when
-	got := linecount.CommentLineFlags(lit)
+	got := linecount.CommentLineFlags(lit, nil)
 
 	// then
 	assert.Equal(t, []bool{true, false, true, false, false}, got)
+}
+
+func Test_CommentLineFlags_shouldNotFlagLine_whenIgnoreMatchesText(t *testing.T) {
+	t.Parallel()
+
+	// given
+	lit := "/* keep\n * given\n*/"
+
+	// when
+	got := linecount.CommentLineFlags(lit, ignoreGiven)
+
+	// then
+	assert.Equal(t, []bool{true, false, false}, got)
 }
 
 func Test_CommentLineFlags_shouldNotFlagLine_whenLineHasOnlyStarsAndSpaces(t *testing.T) {
@@ -427,7 +483,7 @@ func Test_CommentLineFlags_shouldNotFlagLine_whenLineHasOnlyStarsAndSpaces(t *te
 			lit := "/* text\n" + tt.line + "\n*/"
 
 			// when
-			got := linecount.CommentLineFlags(lit)
+			got := linecount.CommentLineFlags(lit, nil)
 
 			// then
 			assert.Equal(t, []bool{true, false, false}, got)
@@ -442,7 +498,7 @@ func Test_CommentLineFlags_shouldFlagLine_whenStarsSurroundText(t *testing.T) {
 	lit := "/* **bold** */"
 
 	// when
-	got := linecount.CommentLineFlags(lit)
+	got := linecount.CommentLineFlags(lit, nil)
 
 	// then
 	assert.Equal(t, []bool{true}, got)

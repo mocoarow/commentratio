@@ -113,11 +113,42 @@ func (c fileContext) checkGenDecl(rule DocRule, d *ast.GenDecl) {
 func (c fileContext) checkFile(rule Rule) {
 	last := c.lines.LineCount()
 	code := c.lines.Code(1, last)
-	comment := c.lines.Comment(c.line(c.file.Package), last)
+	comment := c.lines.Comment(c.line(c.file.Package), last) - c.docSummaryLines()
 
 	if judge.TooMany(comment, code, rule.limits()) {
 		c.pass.Reportf(c.file.Package, msgFileTooMany, comment, code, judge.Limit(code, rule.limits()))
 	}
+}
+
+// docSummaryLines counts the declaration doc comments that have a counted line; the file check skips one line
+// (the summary) of each.
+func (c fileContext) docSummaryLines() int {
+	n := 0
+	count := func(doc *ast.CommentGroup) {
+		if c.commentLines(doc) > 0 {
+			n++
+		}
+	}
+
+	for _, decl := range c.file.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			count(d.Doc)
+		case *ast.GenDecl:
+			if d.Tok == token.IMPORT {
+				continue
+			}
+
+			count(d.Doc)
+
+			for _, spec := range d.Specs {
+				doc, _ := specDocAndNames(spec)
+				count(doc)
+			}
+		}
+	}
+
+	return n
 }
 
 func (c fileContext) reportLongDoc(rule Rule, doc *ast.CommentGroup, name string, code int) {
@@ -141,7 +172,7 @@ func (c fileContext) firstCountedComment(from, to int, fallback token.Pos) token
 
 		for _, comment := range group.List {
 			start := c.line(comment.Pos())
-			for i, counted := range linecount.CommentLineFlags(comment.Text) {
+			for i, counted := range linecount.CommentLineFlags(comment.Text, c.ignore) {
 				if counted && from <= start+i && start+i <= to {
 					return comment.Pos()
 				}

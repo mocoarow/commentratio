@@ -19,9 +19,13 @@ type Lines struct {
 	comment []int
 }
 
+// Ignore reports whether a comment line, given its text without comment markers and surrounding space,
+// is not counted. A nil Ignore ignores nothing.
+type Ignore func(text string) bool
+
 // Classify scans src once and records, for each line, whether it has code and whether it has a comment to count.
 // If src cannot be tokenized, it returns the first error, wrapping ErrScan, at its physical position.
-func Classify(filename string, src []byte) (Lines, error) {
+func Classify(filename string, src []byte, ignore Ignore) (Lines, error) {
 	fset := token.NewFileSet()
 	tf := fset.AddFile(filename, -1, len(src))
 
@@ -37,7 +41,7 @@ func Classify(filename string, src []byte) (Lines, error) {
 	var s scanner.Scanner
 	s.Init(tf, src, handleErr, scanner.ScanComments)
 
-	code, comment := scanLines(&s, tf, bytes.Count(src, []byte("\n"))+1)
+	code, comment := scanLines(&s, tf, bytes.Count(src, []byte("\n"))+1, ignore)
 	if firstErr != nil {
 		return Lines{}, firstErr
 	}
@@ -45,7 +49,7 @@ func Classify(filename string, src []byte) (Lines, error) {
 	return Lines{code: prefixSums(code, tf.LineCount()), comment: prefixSums(comment, tf.LineCount())}, nil
 }
 
-func scanLines(s *scanner.Scanner, tf *token.File, maxLines int) ([]bool, []bool) {
+func scanLines(s *scanner.Scanner, tf *token.File, maxLines int, ignore Ignore) ([]bool, []bool) {
 	code := make([]bool, maxLines+1)
 	comment := make([]bool, maxLines+1)
 
@@ -62,7 +66,7 @@ func scanLines(s *scanner.Scanner, tf *token.File, maxLines int) ([]bool, []bool
 		case tok == token.SEMICOLON && lit == "\n":
 			// Automatically inserted semicolons are not code.
 		case tok == token.COMMENT:
-			for i, counted := range CommentLineFlags(lit) {
+			for i, counted := range CommentLineFlags(lit, ignore) {
 				if counted {
 					comment[start+i] = true
 				}
@@ -130,9 +134,9 @@ func isDirective(text string) bool {
 }
 
 // CommentLineFlags reports, for each line of a comment token, whether the line is counted as a comment line.
-func CommentLineFlags(lit string) []bool {
+func CommentLineFlags(lit string, ignore Ignore) []bool {
 	if strings.HasPrefix(lit, "//") {
-		return []bool{!isDirective(lit) && strings.TrimSpace(lit[len("//"):]) != ""}
+		return []bool{!isDirective(lit) && counted(strings.TrimSpace(lit[len("//"):]), ignore)}
 	}
 
 	body := strings.TrimSuffix(strings.TrimPrefix(lit, "/*"), "*/")
@@ -140,10 +144,14 @@ func CommentLineFlags(lit string) []bool {
 	flags := make([]bool, len(parts))
 
 	for i, part := range parts {
-		flags[i] = strings.TrimFunc(part, isDecoration) != ""
+		flags[i] = counted(strings.TrimFunc(part, isDecoration), ignore)
 	}
 
 	return flags
+}
+
+func counted(text string, ignore Ignore) bool {
+	return text != "" && (ignore == nil || !ignore(text))
 }
 
 func isDecoration(r rune) bool {

@@ -33,6 +33,12 @@ func settingsKeys() []string {
 
 	for field := range reflect.TypeFor[commentratio.Settings]().Fields() {
 		prefix := strings.Split(field.Tag.Get("json"), ",")[0]
+		if field.Type.Kind() != reflect.Struct {
+			keys = append(keys, prefix)
+
+			continue
+		}
+
 		for _, key := range jsonKeys(field.Type) {
 			keys = append(keys, prefix+"."+key)
 		}
@@ -77,6 +83,22 @@ func Test_NewAnalyzer_shouldNotRegisterRequireFromFlag_whenRuleIsNotDocRule(t *t
 			assert.Nil(t, got)
 		})
 	}
+}
+
+func Test_NewAnalyzer_shouldAppendIgnorePattern_whenFlagIsRepeated(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := commentratio.DefaultSettings()
+	s.IgnorePatterns = []string{"^given$"}
+	a := newAnalyzer(t, s)
+
+	// when
+	err := a.Flags.Parse([]string{"-ignore-patterns", "^when$", "-ignore-patterns", "^then$"})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, "^given$,^when$,^then$", a.Flags.Lookup("ignore-patterns").Value.String())
 }
 
 func Test_NewAnalyzer_shouldPrintFlags_whenHelpIsRequested(t *testing.T) {
