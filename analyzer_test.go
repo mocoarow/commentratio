@@ -235,6 +235,37 @@ func Test_NewAnalyzer_shouldReportFile_whenCommentsExceedLimit(t *testing.T) {
 	runAnalyzer(t, s, "fileng")
 }
 
+func Test_NewAnalyzer_shouldNotCountDocSummaryLineInFile_whenDocIsOneLine(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFile)
+
+	// when, then
+	runAnalyzer(t, s, "filedocsummary")
+}
+
+func Test_NewAnalyzer_shouldCountDocLinesAfterSummaryInFile_whenDocHasMoreLines(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFile)
+
+	// when, then
+	runAnalyzer(t, s, "filedocsummaryng")
+}
+
+func Test_NewAnalyzer_shouldNotCountComment_whenTextMatchesIgnorePattern(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := only(testLimitSettings(), enableFuncBody)
+	s.IgnorePatterns = []string{"^(given|when|then)$"}
+
+	// when, then
+	runAnalyzer(t, s, "ignorepatterns")
+}
+
 func Test_NewAnalyzer_shouldSkipFile_whenFileIsGenerated(t *testing.T) {
 	t.Parallel()
 

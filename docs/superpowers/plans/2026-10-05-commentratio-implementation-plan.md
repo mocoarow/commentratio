@@ -38,9 +38,10 @@
 | e | 単体コマンド | 小 | 済（#6） |
 | f | golangci-lint plugin | 小 | 済（#6）。v0.1.0 のタグ済み |
 | g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2、#6）。`custom-gcl` と `calibrate` タスクは未 |
-| h | cocotola-1.26 での調整 | 中 | コミット待ち（feat/calibrate-on-cocotola） |
+| h | cocotola-1.26 での調整 | 中 | 済（#8）。v0.1.1 |
 | i | テスト関数を GoDoc なしの判定から外す | 小 | 済（#7） |
-| j | 非公開の型のメソッドを GoDoc なしの判定から外す | 小 | コミット待ち（feat/calibrate-on-cocotola） |
+| j | 非公開の型のメソッドを GoDoc なしの判定から外す | 小 | 済（#8）。v0.1.1 |
+| k | `file` で宣言の GoDoc の要約行を数えない・`ignore-patterns` | 小 | コミット待ち（feat/godoc-summary-and-ignore-patterns） |
 
 見込み: 本体コード約 600 行、テストと testdata 約 1000 行。
 
@@ -103,6 +104,12 @@ cocotola-1.26 の各 Go モジュールで `GOFLAGS=-tags=small,medium,large bin
 ### (j) 非公開の型のメソッド
 
 (h) で「GoDoc なし」の 4 件がすべて非公開の型の公開名メソッドだったため追加（2026-10-11 決定）。golint・revive の exported ルールと同じ扱いで、公開の型に埋め込まれて昇格するメソッドも判定しない。挙動は `testdata/src/funcdoc*` を参照。
+
+---
+
+### (k) GoDoc の要約行と ignore-patterns
+
+cocotola-1.26 で、コメントを削っても残った 7 件がすべて必須のコメントだったため追加（2026-10-11 決定）。revive が求める 1 行 GoDoc が並ぶファイルと、規約で必須のテストの区切りコメント（given/when/then）。後者はプロジェクト固有なので、利用側が正規表現で指定する。挙動は `testdata/src/filedocsummary*`、`ignorepatterns` を参照。
 
 ---
 

@@ -57,6 +57,8 @@ To suppress a report, add `//nolint:commentratio` on its own line above the repo
   - empty `//` lines used as paragraph breaks, and blank or `*`-only lines inside `/* */`
   - directives: comments starting with `//go:`, `//nolint`, `//lint:`, or `//line` with a trailing space
   - for `file` only: comments before the `package` clause (license headers) and the package GoDoc
+  - for `file` only: one counted line (the summary) of each function, type, const, and var GoDoc; later lines are counted
+  - lines whose text, without comment markers and surrounding space, matches one of `ignore-patterns`
 - A line with a trailing comment (`x := 1 // note`) counts as both a code line and a comment line.
 - Every line of a multi-line raw string counts as a code line, including blank lines inside it.
 - Generated files are skipped. `_test.go` files are checked.
@@ -104,7 +106,8 @@ file:
 
 - Omitted keys keep their default values.
 - `enabled: false` disables the check for that target.
-- Settings are rejected if a value is negative, `max-ratio` is not a finite number, `free-lines` is greater than `max-lines`, a key is unknown, or `require-from` is set on `func-body` or `file`.
+- `ignore-patterns` (default empty) lists regular expressions for comment lines that no check counts, for example `["^(given|when|then)$"]`. The standalone command takes `-ignore-patterns`, repeated once per pattern.
+- Settings are rejected if a value is negative, `max-ratio` is not a finite number, `free-lines` is greater than `max-lines`, an `ignore-patterns` entry is not a valid regular expression, a key is unknown, or `require-from` is set on `func-body` or `file`.
 
 ## Development
 

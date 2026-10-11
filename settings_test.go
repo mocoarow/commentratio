@@ -183,6 +183,20 @@ func Test_Settings_Validate_shouldReturnErrInvalidSettings_whenDisabledRuleIsInv
 	require.ErrorIs(t, err, commentratio.ErrInvalidSettings)
 }
 
+func Test_Settings_Validate_shouldReturnErrInvalidSettings_whenIgnorePatternIsInvalid(t *testing.T) {
+	t.Parallel()
+
+	// given
+	s := commentratio.DefaultSettings()
+	s.IgnorePatterns = []string{"^ok$", "("}
+
+	// when
+	err := s.Validate()
+
+	// then
+	require.ErrorIs(t, err, commentratio.ErrInvalidSettings)
+}
+
 func Test_DecodeSettings_shouldReturnDefaults_whenRawIsNil(t *testing.T) {
 	t.Parallel()
 
@@ -275,12 +289,14 @@ func Test_DecodeSettings_shouldApplyValue_whenKeyIsSet(t *testing.T) {
 
 	// given
 	raw := map[string]any{
-		"func-doc":  map[string]any{"free-lines": 7, "max-ratio": 0.45, "max-lines": 21, "require-from": 13},
-		"decl-doc":  map[string]any{"free-lines": 6, "max-ratio": 0.35, "max-lines": 22, "require-from": 14},
-		"func-body": map[string]any{"free-lines": 4, "max-ratio": 0.15, "max-lines": 9},
-		"file":      map[string]any{"free-lines": 8, "max-ratio": 0.55, "max-lines": 123},
+		"func-doc":        map[string]any{"free-lines": 7, "max-ratio": 0.45, "max-lines": 21, "require-from": 13},
+		"decl-doc":        map[string]any{"free-lines": 6, "max-ratio": 0.35, "max-lines": 22, "require-from": 14},
+		"func-body":       map[string]any{"free-lines": 4, "max-ratio": 0.15, "max-lines": 9},
+		"file":            map[string]any{"free-lines": 8, "max-ratio": 0.55, "max-lines": 123},
+		"ignore-patterns": []any{"^given$", "^then$"},
 	}
 	want := commentratio.Settings{
+		IgnorePatterns: []string{"^given$", "^then$"},
 		FuncDoc: commentratio.DocRule{
 			Rule:        commentratio.Rule{Enabled: true, FreeLines: 7, MaxRatio: 0.45, MaxLines: 21},
 			RequireFrom: 13,
