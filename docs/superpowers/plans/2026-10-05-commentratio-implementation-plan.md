@@ -37,11 +37,11 @@
 | d | Analyzer への組み込み、4 対象のチェック、フラグ | 大 | 済（#5） |
 | e | 単体コマンド | 小 | 済（#6） |
 | f | golangci-lint plugin | 小 | 済（#6）。v0.1.0 のタグ済み |
-| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 一部済（#2、#6）。`custom-gcl` と `calibrate` タスクは未 |
+| g | README、`.golangci.yml`、`Taskfile.yml` | 小 | 済（#2、#6）。`custom-gcl` と `calibrate` タスクは不要と判断（2026-10-12） |
 | h | cocotola-1.26 での調整 | 中 | 済（#8）。v0.1.1 |
 | i | テスト関数を GoDoc なしの判定から外す | 小 | 済（#7） |
 | j | 非公開の型のメソッドを GoDoc なしの判定から外す | 小 | 済（#8）。v0.1.1 |
-| k | `file` で宣言の GoDoc の要約行を数えない・`ignore-patterns` | 小 | コミット待ち（feat/godoc-summary-and-ignore-patterns） |
+| k | `file` で宣言の GoDoc の要約行を数えない・`ignore-patterns` | 小 | 済（#9、v0.1.2） |
 
 見込み: 本体コード約 600 行、テストと testdata 約 1000 行。
 
@@ -85,7 +85,7 @@
 
 ### (g) README、golangci 設定、Taskfile
 
-残り: `Taskfile.yml` の `custom-gcl`、`calibrate` タスク。
+`Taskfile.yml` の `custom-gcl`、`calibrate` タスクは作らない（2026-10-12 決定）。custom-gcl の手順は README にあり、値の調整は (h) で済んでいる。
 
 ---
 
